@@ -6,3 +6,12 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
