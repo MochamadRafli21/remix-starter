@@ -1,18 +1,29 @@
-import { Form } from "@remix-run/react";
-import { Button, Input, Label } from "~/components/ui";
+import type { ActionFunctionArgs } from "@remix-run/node";
+import { Form, redirect } from "@remix-run/react";
+import { authenticator } from "~/services/auth.server";
+import { Input, Label, Button } from "~/components/ui";
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  try {
+    await authenticator.authenticate("user-pass", request);
+    return redirect("/dashboard");
+  } catch (error) {
+    return new Response("Invalid credentials", { status: 401 });
+  }
+};
 
 export default function LoginPage() {
   return (
-    <div className="w-full max-w-sm mx-auto mt-24">
-      <h2 className="text-2xl mb-4">Login</h2>
-      <Form method="post">
-        <div className="mb-4">
+    <div className="w-full max-w-sm mx-auto mt-10">
+      <h2 className="text-2xl font-bold mb-4">Login</h2>
+      <Form method="post" className="space-y-4">
+        <div>
           <Label htmlFor="email">Email</Label>
-          <Input type="email" name="email" id="email" required />
+          <Input id="email" name="email" type="email" required />
         </div>
-        <div className="mb-4">
+        <div>
           <Label htmlFor="password">Password</Label>
-          <Input type="password" name="password" id="password" required />
+          <Input id="password" name="password" type="password" required />
         </div>
         <Button type="submit" className="w-full">
           Log In
