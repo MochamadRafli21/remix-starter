@@ -28,7 +28,6 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log(actionData?.error);
     if (actionData?.error) {
       toast({
         title: "Login Failed",

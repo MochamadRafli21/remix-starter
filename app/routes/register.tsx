@@ -1,26 +1,42 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { useEffect } from "react";
+import { Form, redirect, useActionData } from "@remix-run/react";
 import bcrypt from "bcryptjs";
 import { db } from "~/db/client";
 import { users } from "~/db/schema";
 import { eq } from "drizzle-orm";
+import { useToast } from "~/hooks/use-toast";
 import { Input, Label, Button } from "~/components/ui";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  console.log(formData);
   const email = formData.get("email")?.toString();
   const password = formData.get("password")?.toString();
 
   if (!email || !password) {
-    return new Response("Missing fields", { status: 400 });
+    return new Response(
+      JSON.stringify({
+        error: "Missing fields",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   // Check if user already exists
   const existing = await db.select().from(users).where(eq(users.email, email));
   if (existing.length > 0) {
-    return new Response("User already exists", { status: 400 });
+    return new Response(
+      JSON.stringify({
+        error: "User already exist",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   // Hash password
@@ -37,6 +53,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function RegisterPage() {
+  const actionData = useActionData<typeof action>();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (actionData?.error) {
+      toast({
+        title: "Registration Failed",
+        description: actionData.error,
+        variant: "destructive",
+      });
+    }
+  }, [actionData, toast]);
+
   return (
     <div className="w-full max-w-sm mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-4">Register</h2>
