@@ -4,13 +4,23 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "@remix-run/react";
+import { LoaderFunctionArgs } from "@remix-run/node";
+import { getSession } from "~/services/auth.server";
 import { Toaster } from "~/components/ui";
 import { Navbar } from "./components/molecules/navbar";
-import { ThemeProvider } from "~/components/provider/theme";
+import { ThemeProvider, UserProvider } from "~/components/provider";
 import type { LinksFunction } from "@remix-run/node";
 
 import "./tailwind.css";
+
+type LoaderData = {
+  user: {
+    id: string;
+    email: string;
+  } | null;
+};
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -42,25 +52,43 @@ const setInitialTheme = () => {
   return script;
 };
 
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const session = await getSession(request.headers.get("Cookie"));
+  const user = session.get("user");
+
+  return new Response(JSON.stringify({ user }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+};
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { user } = useLoaderData<LoaderData>();
   return (
     <ThemeProvider>
-      <html lang="en">
-        <head>
-          <meta charSet="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <Meta />
-          <Links />
-          <script dangerouslySetInnerHTML={{ __html: setInitialTheme() }} />
-        </head>
-        <body>
-          <Navbar />
-          {children}
-          <ScrollRestoration />
-          <Scripts />
-          <Toaster />
-        </body>
-      </html>
+      <UserProvider initialUser={user}>
+        <html lang="en">
+          <head>
+            <meta charSet="utf-8" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1"
+            />
+            <Meta />
+            <Links />
+            <script dangerouslySetInnerHTML={{ __html: setInitialTheme() }} />
+          </head>
+          <body>
+            <Navbar />
+            {children}
+            <ScrollRestoration />
+            <Scripts />
+            <Toaster />
+          </body>
+        </html>
+      </UserProvider>
     </ThemeProvider>
   );
 }

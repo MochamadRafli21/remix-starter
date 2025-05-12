@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { createCookieSessionStorage } from "@remix-run/node";
 
 const sessionSecret = process.env.SESSION_SECRET!;
-export const storage = createCookieSessionStorage({
+const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: "__session",
     secrets: [sessionSecret],
@@ -18,6 +18,7 @@ export const storage = createCookieSessionStorage({
   },
 });
 
+export const { getSession, commitSession, destroySession } = sessionStorage;
 export const authenticator = new Authenticator();
 
 authenticator.use(

@@ -1,14 +1,36 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { Form, redirect, useActionData } from "@remix-run/react";
-import { authenticator } from "~/services/auth.server";
+import {
+  authenticator,
+  getSession,
+  commitSession,
+} from "~/services/auth.server";
 import { Input, Label, Button } from "~/components/ui";
 import { useEffect } from "react";
 import { useToast } from "~/hooks/use-toast";
 
+type User = {
+  id: string;
+  email: string;
+};
+
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
-    await authenticator.authenticate("user-pass", request);
-    return redirect("/dashboard");
+    const user = (await authenticator.authenticate(
+      "user-pass",
+      request
+    )) as User;
+
+    const session = await getSession(request.headers.get("Cookie"));
+    if (!user.id || !user.email || !session) {
+      throw "Failed to get user";
+    }
+    session.set("user", { id: user.id, email: user.email });
+    return redirect("/", {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    });
   } catch (error) {
     return new Response(
       JSON.stringify({
