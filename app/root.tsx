@@ -6,6 +6,8 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 import { Toaster } from "~/components/ui";
+import { Navbar } from "./components/molecules/navbar";
+import { ThemeProvider } from "~/components/provider/theme";
 import type { LinksFunction } from "@remix-run/node";
 
 import "./tailwind.css";
@@ -23,22 +25,43 @@ export const links: LinksFunction = () => [
   },
 ];
 
+const setInitialTheme = () => {
+  const script = `
+    (function() {
+      try {
+        const theme = localStorage.getItem("theme");
+        const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (theme === "dark" || (!theme && systemDark)) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      } catch (_) {}
+    })();
+  `;
+  return script;
+};
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-        <Toaster />
-      </body>
-    </html>
+    <ThemeProvider>
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <Meta />
+          <Links />
+          <script dangerouslySetInnerHTML={{ __html: setInitialTheme() }} />
+        </head>
+        <body>
+          <Navbar />
+          {children}
+          <ScrollRestoration />
+          <Scripts />
+          <Toaster />
+        </body>
+      </html>
+    </ThemeProvider>
   );
 }
 
