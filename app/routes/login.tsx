@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { Form, redirect, useActionData } from "@remix-run/react";
+import { Form, redirect, useActionData, useRoutes } from "@remix-run/react";
 import {
   authenticator,
   getSession,
@@ -7,6 +7,8 @@ import {
 } from "~/services/auth.server";
 import { Input, Label, Button } from "~/components/ui";
 import { useEffect } from "react";
+import { useUser } from "~/components/provider";
+import { useNavigate } from "@remix-run/react";
 import { useToast } from "~/hooks/use-toast";
 
 type User = {
@@ -26,11 +28,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       throw "Failed to get user";
     }
     session.set("user", { id: user.id, email: user.email });
-    return redirect("/", {
-      headers: {
-        "Set-Cookie": await commitSession(session),
-      },
-    });
+    return new Response(
+      JSON.stringify({
+        data: user,
+      }),
+      {
+        status: 201,
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": await commitSession(session),
+        },
+      }
+    );
   } catch (error) {
     return new Response(
       JSON.stringify({
@@ -47,6 +56,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function LoginPage() {
   const actionData = useActionData<typeof action>();
+  const navigate = useNavigate();
+  const { setUser } = useUser();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -56,6 +67,9 @@ export default function LoginPage() {
         description: actionData.error,
         variant: "destructive",
       });
+    } else if (actionData?.data.id) {
+      setUser(actionData?.data);
+      navigate("/");
     }
   }, [actionData, toast]);
 
